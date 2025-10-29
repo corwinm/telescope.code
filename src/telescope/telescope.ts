@@ -15,6 +15,7 @@ export class TelescopeController {
   private currentResults: SearchResult[] = [];
   private isUpdatingResults = false;
   private selectedIndex: number = 0;
+  private inputLineIndex: number = 0;
 
   dispose() {
     this.disposables.forEach((d) => d.dispose());
@@ -37,8 +38,10 @@ export class TelescopeController {
 
     await vscode.languages.setTextDocumentLanguage(doc, "telescope");
 
+    const initialContent = "> ";
+    
     const edit = new vscode.WorkspaceEdit();
-    edit.insert(doc.uri, new vscode.Position(0, 0), this.getSampleContent());
+    edit.insert(doc.uri, new vscode.Position(0, 0), initialContent);
     await vscode.workspace.applyEdit(edit);
 
     this.telescopeEditor = await vscode.window.showTextDocument(doc, {
@@ -53,13 +56,13 @@ export class TelescopeController {
       "off"
     );
 
-    const lastLine = doc.lineCount - 1;
-    const lastLineLength = doc.lineAt(lastLine).text.length;
+    this.inputLineIndex = 0;
+    const inputLineLength = this.telescopeEditor.document.lineAt(this.inputLineIndex).text.length;
     this.telescopeEditor.selection = new vscode.Selection(
-      lastLine,
-      lastLineLength,
-      lastLine,
-      lastLineLength
+      this.inputLineIndex,
+      inputLineLength,
+      this.inputLineIndex,
+      inputLineLength
     );
 
     this.setupListeners();
@@ -94,21 +97,21 @@ export class TelescopeController {
     }
 
     const doc = e.document;
-    const lastLineIndex = doc.lineCount - 1;
-    const lastLine = doc.lineAt(lastLineIndex);
 
     for (const change of e.contentChanges) {
       const changeStartLine = change.range.start.line;
       const changeEndLine = change.range.end.line;
 
-      if (changeStartLine < lastLineIndex) {
+      if (changeStartLine !== this.inputLineIndex && changeEndLine !== this.inputLineIndex) {
         return;
       }
     }
 
-    if (!lastLine.text.startsWith("> ")) {
+    const inputLine = doc.lineAt(this.inputLineIndex);
+
+    if (!inputLine.text.startsWith("> ")) {
       this.isPreventingEdit = true;
-      await this.restoreInputMarker(doc, lastLineIndex);
+      await this.restoreInputMarker(doc, this.inputLineIndex);
       this.isPreventingEdit = false;
       return;
     }
@@ -124,15 +127,15 @@ export class TelescopeController {
 
   private async restoreInputMarker(
     doc: vscode.TextDocument,
-    lastLineIndex: number
+    inputLineIndex: number
   ) {
     if (!this.telescopeEditor) {
       return;
     }
 
     const edit = new vscode.WorkspaceEdit();
-    const lastLine = doc.lineAt(lastLineIndex);
-    const currentText = lastLine.text;
+    const inputLine = doc.lineAt(inputLineIndex);
+    const currentText = inputLine.text;
 
     let newText = currentText;
     if (!currentText.startsWith("> ")) {
@@ -145,14 +148,14 @@ export class TelescopeController {
 
     edit.replace(
       doc.uri,
-      new vscode.Range(lastLineIndex, 0, lastLineIndex, lastLine.text.length),
+      new vscode.Range(inputLineIndex, 0, inputLineIndex, inputLine.text.length),
       newText
     );
 
     await vscode.workspace.applyEdit(edit);
 
     const newPosition = new vscode.Position(
-      lastLineIndex,
+      inputLineIndex,
       Math.max(2, this.telescopeEditor.selection.active.character)
     );
     this.telescopeEditor.selection = new vscode.Selection(
@@ -170,18 +173,16 @@ export class TelescopeController {
       return;
     }
 
-    const doc = this.telescopeEditor.document;
-    const lastLineIndex = doc.lineCount - 1;
     const selection = e.selections[0];
     const cursorLine = selection.active.line;
     const cursorChar = selection.active.character;
 
-    if (cursorLine !== lastLineIndex) {
+    if (cursorLine !== this.inputLineIndex) {
       this.isRestoringCursor = true;
-      const lastLine = doc.lineAt(lastLineIndex);
+      const inputLine = this.telescopeEditor.document.lineAt(this.inputLineIndex);
       const newPosition = new vscode.Position(
-        lastLineIndex,
-        lastLine.text.length
+        this.inputLineIndex,
+        inputLine.text.length
       );
       this.telescopeEditor.selection = new vscode.Selection(
         newPosition,
@@ -190,7 +191,7 @@ export class TelescopeController {
       this.isRestoringCursor = false;
     } else if (cursorChar < 2) {
       this.isRestoringCursor = true;
-      const newPosition = new vscode.Position(lastLineIndex, 2);
+      const newPosition = new vscode.Position(this.inputLineIndex, 2);
       this.telescopeEditor.selection = new vscode.Selection(
         newPosition,
         newPosition
@@ -225,35 +226,35 @@ export class TelescopeController {
     }
 
     const doc = this.telescopeEditor.document;
-    const lastLineIndex = doc.lineCount - 1;
-    const lastLine = doc.lineAt(lastLineIndex).text;
+    const currentInputLine = doc.lineAt(this.inputLineIndex).text;
 
     const resultLines = results.map((r, index) => {
       const prefix = index === this.selectedIndex ? "> " : "  ";
       return `${prefix}${r.filePath}:${r.line}: ${r.text}`;
     });
 
-    const newContent = [...resultLines, "", lastLine].join("\n");
+    const newContent = [...resultLines, "", currentInputLine].join("\n");
 
     const edit = new vscode.WorkspaceEdit();
     const fullRange = new vscode.Range(
       0,
       0,
-      lastLineIndex,
-      doc.lineAt(lastLineIndex).text.length
+      doc.lineCount - 1,
+      doc.lineAt(doc.lineCount - 1).text.length
     );
     edit.replace(doc.uri, fullRange, newContent);
 
     await vscode.workspace.applyEdit(edit);
 
-    const newLastLine = this.telescopeEditor.document.lineCount - 1;
-    const newLastLineLength =
-      this.telescopeEditor.document.lineAt(newLastLine).text.length;
+    const inputLineIndex = resultLines.length + 1;
+    const inputLineLength =
+      this.telescopeEditor.document.lineAt(inputLineIndex).text.length;
+    this.inputLineIndex = inputLineIndex;
     this.telescopeEditor.selection = new vscode.Selection(
-      newLastLine,
-      newLastLineLength,
-      newLastLine,
-      newLastLineLength
+      inputLineIndex,
+      inputLineLength,
+      inputLineIndex,
+      inputLineLength
     );
 
     this.isUpdatingResults = false;
@@ -261,14 +262,13 @@ export class TelescopeController {
   }
 
   private extractSearchQuery(doc: vscode.TextDocument): string {
-    const lastLineIndex = doc.lineCount - 1;
-    const lastLine = doc.lineAt(lastLineIndex);
+    const inputLine = doc.lineAt(this.inputLineIndex);
 
-    if (!lastLine.text.startsWith("> ")) {
+    if (!inputLine.text.startsWith("> ")) {
       return "";
     }
 
-    return lastLine.text.substring(2).trim();
+    return inputLine.text.substring(2).trim();
   }
 
   async selectResult() {

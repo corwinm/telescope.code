@@ -4,7 +4,7 @@
   "description": "Yet another telescope for VSCode",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.105.0"
+    "vscode": "^1.96.2"
   },
   "categories": [
     "Other"
@@ -14,8 +14,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "telescope-code.helloWorld",
-        "title": "Hello World"
+        "command": "telescope-code.search",
+        "title": "Telescope: Search Workspace"
+      },
+      {
+        "command": "telescope-code.selectResult",
+        "title": "Telescope: Select Result"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "telescope-code.selectResult",
+        "key": "enter",
+        "when": "editorTextFocus && resourceScheme == untitled"
       }
     ]
   },

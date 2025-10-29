@@ -20,12 +20,50 @@
       {
         "command": "telescope-code.selectResult",
         "title": "Telescope: Select Result"
+      },
+      {
+        "command": "telescope-code.moveSelectionUp",
+        "title": "Telescope: Move Selection Up"
+      },
+      {
+        "command": "telescope-code.moveSelectionDown",
+        "title": "Telescope: Move Selection Down"
       }
     ],
     "keybindings": [
       {
         "command": "telescope-code.selectResult",
         "key": "enter",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionUp",
+        "key": "up",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionDown",
+        "key": "down",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionUp",
+        "key": "ctrl+k",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionDown",
+        "key": "ctrl+j",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionUp",
+        "key": "ctrl+p",
+        "when": "editorTextFocus && resourceScheme == untitled"
+      },
+      {
+        "command": "telescope-code.moveSelectionDown",
+        "key": "ctrl+n",
         "when": "editorTextFocus && resourceScheme == untitled"
       }
     ]

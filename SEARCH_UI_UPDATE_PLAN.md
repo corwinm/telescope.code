@@ -167,20 +167,46 @@ Options to explore:
 3. Configure untitled document to not prompt for save
 4. Use internal VSCode APIs if available
 
+## Implementation Status
+
+**Status**: ✅ COMPLETED
+
+All tasks have been successfully implemented.
+
+### Completed Changes
+
+1. ✅ **Task 1: Selection State Management** - Added `selectedIndex` property (line 17)
+2. ✅ **Task 2: Visual Selection Marker** - Updated `updateResults()` to add ">" prefix for selected items (lines 188-191)
+3. ✅ **Task 3: Navigation Commands** - Implemented `moveSelectionUp()` and `moveSelectionDown()` methods (lines 241-267)
+4. ✅ **Task 4: Update File Opening Logic** - Modified `selectResult()` to use `selectedIndex` (lines 232-238)
+5. ✅ **Task 5: Register Commands** - Added command registrations in `extension.ts` (lines 19-26)
+6. ✅ **Task 6: Configure Keybindings** - Added arrow keys and Vim-style keybindings in `package.json` (lines 31-57)
+7. ✅ **Task 7: Add Command Definitions** - Added command definitions in `package.json` (lines 21-28)
+8. ✅ **Task 8: Improve Close Behavior** - Used `revertAndCloseActiveEditor` and moved close before file open (line 297, line 278)
+9. ✅ **Task 9: Full-Screen Display** - Added `viewColumn: vscode.ViewColumn.Active` (line 37)
+10. ✅ **Task 10: State Reset on Reopen** - Added state reset in `show()` method (lines 29-33)
+
+### Bug Fixes Applied
+
+- **Selection marker not moving**: Added `resetSelection` parameter to `updateResults()` to preserve selection during navigation
+- **File opens then closes**: Moved `closeTelescopeEditor()` call before opening target file
+- **Search broken after reopen**: Added state reset (currentResults, selectedIndex, flags) in `show()` method
+
 ## Testing Checklist
 
-- [ ] Full-screen display shows results filling visible area
-- [ ] Selection marker ">" appears on bottom result by default
-- [ ] Non-selected results have "  " prefix (two spaces for alignment)
-- [ ] Up arrow moves selection up (toward top of list)
-- [ ] Down arrow moves selection down (toward bottom of list)
-- [ ] Selection wraps or stops at boundaries appropriately
-- [ ] Typing search query resets selection to bottom result
-- [ ] Enter key opens selected file at correct line
-- [ ] Opening file closes telescope without save prompt
-- [ ] Cursor remains locked to input line during navigation
-- [ ] Vim keybindings (Ctrl+J/K) work if configured
-- [ ] Navigation only works when telescope is focused
+- [x] Full-screen display shows results filling visible area
+- [x] Selection marker ">" appears on bottom result by default
+- [x] Non-selected results have "  " prefix (two spaces for alignment)
+- [x] Up arrow moves selection up (toward top of list)
+- [x] Down arrow moves selection down (toward bottom of list)
+- [x] Selection wraps at boundaries (top ↔ bottom)
+- [x] Typing search query resets selection to bottom result
+- [x] Enter key opens selected file at correct line
+- [x] Opening file closes telescope without save prompt
+- [x] Cursor remains locked to input line during navigation
+- [x] Vim keybindings (Ctrl+J/K/P/N) work as configured
+- [x] Navigation only works when telescope is focused
+- [x] Reopening telescope after file selection works correctly
 
 ## Implementation Order
 

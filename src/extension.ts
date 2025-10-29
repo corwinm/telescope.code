@@ -17,7 +17,15 @@ export function activate(context: vscode.ExtensionContext) {
 		telescopeController.selectResult();
 	});
 
-	context.subscriptions.push(searchCommand, selectResultCommand, telescopeController);
+	const moveSelectionUpCommand = vscode.commands.registerCommand('telescope-code.moveSelectionUp', () => {
+		telescopeController.moveSelectionUp();
+	});
+
+	const moveSelectionDownCommand = vscode.commands.registerCommand('telescope-code.moveSelectionDown', () => {
+		telescopeController.moveSelectionDown();
+	});
+
+	context.subscriptions.push(searchCommand, selectResultCommand, moveSelectionUpCommand, moveSelectionDownCommand, telescopeController);
 }
 
 export function deactivate() {}

@@ -14,6 +14,7 @@ export class TelescopeController {
 	private searchProvider: SearchProvider = new WorkspaceTextSearchProvider();
 	private currentResults: SearchResult[] = [];
 	private isUpdatingResults = false;
+	private selectedIndex: number = 0;
 
 	dispose() {
 		this.disposables.forEach(d => d.dispose());
@@ -25,6 +26,12 @@ export class TelescopeController {
 	}
 
 	async show() {
+		this.currentResults = [];
+		this.selectedIndex = 0;
+		this.isUpdatingResults = false;
+		this.isPreventingEdit = false;
+		this.isRestoringCursor = false;
+		
 		const doc = await vscode.workspace.openTextDocument({
 			content: this.getSampleContent(),
 			language: 'plaintext'
@@ -32,8 +39,11 @@ export class TelescopeController {
 
 		this.telescopeEditor = await vscode.window.showTextDocument(doc, {
 			preview: false,
-			preserveFocus: false
+			preserveFocus: false,
+			viewColumn: vscode.ViewColumn.Active
 		});
+
+		await vscode.commands.executeCommand('setContext', 'editorLineNumbers', 'off');
 
 		const lastLine = doc.lineCount - 1;
 		const lastLineLength = doc.lineAt(lastLine).text.length;
@@ -167,7 +177,7 @@ export class TelescopeController {
 		}
 	}
 
-	private async updateResults(results: SearchResult[]) {
+	private async updateResults(results: SearchResult[], resetSelection: boolean = true) {
 		if (!this.telescopeEditor || this.isUpdatingResults) {
 			return;
 		}
@@ -175,14 +185,18 @@ export class TelescopeController {
 		this.isUpdatingResults = true;
 		this.isPreventingEdit = true;
 		this.currentResults = results;
+		if (resetSelection) {
+			this.selectedIndex = Math.max(0, results.length - 1);
+		}
 
 		const doc = this.telescopeEditor.document;
 		const lastLineIndex = doc.lineCount - 1;
 		const lastLine = doc.lineAt(lastLineIndex).text;
 
-		const resultLines = results.map(r => 
-			`${r.filePath}:${r.line}: ${r.text}`
-		);
+		const resultLines = results.map((r, index) => {
+			const prefix = index === this.selectedIndex ? '> ' : '  ';
+			return `${prefix}${r.filePath}:${r.line}: ${r.text}`;
+		});
 		
 		const newContent = [
 			...resultLines,
@@ -224,21 +238,38 @@ export class TelescopeController {
 	}
 
 	async selectResult() {
-		if (!this.telescopeEditor) {
+		if (!this.telescopeEditor || this.currentResults.length === 0) {
 			return;
 		}
 
-		const doc = this.telescopeEditor.document;
-		const currentLine = this.telescopeEditor.selection.active.line;
-		const lineText = doc.lineAt(currentLine).text;
+		const result = this.currentResults[this.selectedIndex];
+		await this.openFile(result.filePath, result.line);
+	}
 
-		const match = lineText.match(/^(.+?):(\d+):/);
-		if (!match) {
+	moveSelectionUp() {
+		if (this.currentResults.length === 0) {
 			return;
 		}
 
-		const [, filePath, lineNumber] = match;
-		await this.openFile(filePath, parseInt(lineNumber, 10));
+		this.selectedIndex = this.selectedIndex - 1;
+		if (this.selectedIndex < 0) {
+			this.selectedIndex = this.currentResults.length - 1;
+		}
+
+		this.updateResults(this.currentResults, false);
+	}
+
+	moveSelectionDown() {
+		if (this.currentResults.length === 0) {
+			return;
+		}
+
+		this.selectedIndex = this.selectedIndex + 1;
+		if (this.selectedIndex >= this.currentResults.length) {
+			this.selectedIndex = 0;
+		}
+
+		this.updateResults(this.currentResults, false);
 	}
 
 	private async openFile(relativePath: string, lineNumber: number) {
@@ -250,6 +281,8 @@ export class TelescopeController {
 		const fullPath = vscode.Uri.joinPath(workspaceFolders[0].uri, relativePath);
 
 		try {
+			await this.closeTelescopeEditor();
+			
 			const doc = await vscode.workspace.openTextDocument(fullPath);
 			const line = Math.max(0, lineNumber - 1);
 			const editor = await vscode.window.showTextDocument(doc);
@@ -260,8 +293,6 @@ export class TelescopeController {
 				new vscode.Range(position, position),
 				vscode.TextEditorRevealType.InCenter
 			);
-
-			await this.closeTelescopeEditor();
 		} catch (error) {
 			vscode.window.showErrorMessage(`Failed to open file: ${relativePath}`);
 		}
@@ -269,9 +300,7 @@ export class TelescopeController {
 
 	private async closeTelescopeEditor() {
 		if (this.telescopeEditor) {
-			const doc = this.telescopeEditor.document;
-			await vscode.window.showTextDocument(doc);
-			await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			await vscode.commands.executeCommand('workbench.action.revertAndCloseActiveEditor');
 			this.telescopeEditor = undefined;
 		}
 		this.changeListener?.dispose();

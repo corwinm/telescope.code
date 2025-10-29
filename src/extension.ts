@@ -1,11 +1,15 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { TelescopeController } from './telescope/TelescopeController';
+import { TelescopeController } from './telescope/telescope';
+import { TelescopeDocumentProvider } from './providers/TelescopeDocumentProvider';
 
 export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Congratulations, your extension "telescope-code" is now active!');
+
+	const telescopeDocumentProvider = new TelescopeDocumentProvider();
+	const providerRegistration = vscode.workspace.registerTextDocumentContentProvider('telescope', telescopeDocumentProvider);
 
 	const telescopeController = new TelescopeController();
 
@@ -25,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
 		telescopeController.moveSelectionDown();
 	});
 
-	context.subscriptions.push(searchCommand, selectResultCommand, moveSelectionUpCommand, moveSelectionDownCommand, telescopeController);
+	context.subscriptions.push(providerRegistration, searchCommand, selectResultCommand, moveSelectionUpCommand, moveSelectionDownCommand, telescopeController);
 }
 
 export function deactivate() {}

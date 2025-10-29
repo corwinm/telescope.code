@@ -12,6 +12,13 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "telescope",
+        "extensions": [".telescope"],
+        "filenames": ["telescope"]
+      }
+    ],
     "commands": [
       {
         "command": "telescope-code.search",
@@ -34,37 +41,37 @@
       {
         "command": "telescope-code.selectResult",
         "key": "enter",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionUp",
         "key": "up",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionDown",
         "key": "down",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionUp",
         "key": "ctrl+k",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionDown",
         "key": "ctrl+j",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionUp",
         "key": "ctrl+p",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       },
       {
         "command": "telescope-code.moveSelectionDown",
         "key": "ctrl+n",
-        "when": "editorTextFocus && resourceScheme == untitled"
+        "when": "editorTextFocus && editorLangId == telescope"
       }
     ]
   },
